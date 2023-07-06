@@ -30,6 +30,7 @@ jobs:
         service_account: ${{ vars.SERVICE_ACCOUNT }}
     - name: Upload to Artifact Registry
       run: |
+        gcloud config set account ${{ vars.SERVICE_ACCOUNT }}
         gcloud artifacts print-settings python \
           --project=${{ vars.REPOSITORY_PROJECT }} \
           --repository=${{ vars.REPOSITORY }} \
