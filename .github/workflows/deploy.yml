@@ -30,9 +30,8 @@ jobs:
         service_account: ${{ vars.SERVICE_ACCOUNT }}
     - name: Upload to Artifact Registry
       run: |
-        gcloud config set artifacts/repository ${{ vars.REPOSITORY }}
-        gcloud config set artifacts/location ${{ vars.REPOSITORY_LOCATION }}
-        gcloud config set account ${{ vars.SERVICE_ACCOUNT }}
-        
-        gcloud artifacts print-settings python > ~/.pypirc
+        gcloud artifacts print-settings python \
+          --project=${{ vars.REPOSITORY_PROJECT }} \
+          --repository=${{ vars.REPOSITORY }} \
+          --location=${{ vars.REPOSITORY_LOCATION }} > ~/.pypirc
         python -m twine upload --repository-url ${{ vars.REPOSITORY_URL }} dist/*
