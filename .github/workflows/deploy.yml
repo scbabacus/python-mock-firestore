@@ -7,6 +7,9 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: 'read'
+      id-token: 'write'
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python
@@ -16,11 +19,20 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install setuptools wheel twine
-    - name: Build and publish
-      env:
-        TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
-        TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+        pip install setuptools wheel twine keyring keyrings.google-artifactregistry-auth
+    - name: Build
       run: |
         python setup.py sdist bdist_wheel
-        twine upload dist/*
+    - id: auth
+      uses: google-github-actions/auth@v1.1.1
+      with:
+        workload_identity_provider: ${{ vars.WORKLOAD_IDENTITY_PROVIDER }}
+        service_account: ${{ vars.SERVICE_ACCOUNT }}
+    - name: Upload to Artifact Registry
+      run: |
+        gcloud config set account ${{ vars.SERVICE_ACCOUNT }}
+        gcloud artifacts print-settings python \
+          --project=${{ vars.REPOSITORY_PROJECT }} \
+          --repository=${{ vars.REPOSITORY }} \
+          --location=${{ vars.REPOSITORY_LOCATION }} > ~/.pypirc
+        python -m twine upload --repository-url ${{ vars.REPOSITORY_URL }} dist/*
