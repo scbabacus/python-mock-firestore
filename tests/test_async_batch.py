@@ -52,15 +52,18 @@ class TestAsyncMockFirestore(aiounittest.AsyncTestCase):
         doc_ref_data_2 = [(coll_ref.document(key), datum) for (key, datum) in data_2]
 
         batch_1 = fs.batch()
+        batch_2 = fs.batch()
+        batch_3 = fs.batch()
+
         for doc_ref, datum in doc_ref_data_1:
             batch_1.set(doc_ref, datum)
         batch_1.delete(coll_ref.document("sample"))
-        await batch_1.commit()
-
-        batch_2 = fs.batch()
         for doc_ref, datum in doc_ref_data_2:
             batch_2.set(doc_ref, datum)
         batch_2.delete(coll_ref.document("quux"))
+        batch_3.delete(coll_ref.document("foo"))
+
+        await batch_1.commit()
         await batch_2.commit()
 
         assert fs._data == {
