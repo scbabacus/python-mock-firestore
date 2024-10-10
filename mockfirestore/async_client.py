@@ -67,11 +67,10 @@ class AsyncMockFirestore(MockFirestore):
         return AsyncTransaction(self, **kwargs)
 
     def batch(self):
-        if not isinstance(self._async_store_ref, BatchAsyncInternal):
-            new_batch_store_ref = BatchAsyncInternal()
-            new_batch_store_ref._data = deepcopy(self._async_store_ref._data) # noqa
-            del self._async_store_ref
-            self._async_store_ref = new_batch_store_ref
+        new_batch_store_ref = BatchAsyncInternal()
+        new_batch_store_ref._data = self._async_store_ref._data
+        del self._async_store_ref
+        self._async_store_ref = new_batch_store_ref
         return self._async_store_ref
 
 
@@ -79,13 +78,17 @@ class BatchAsyncInternal(AsyncMockFirestore):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self._args = args
+        self._kwargs = kwargs
         self._ops_queue: List[FirestoreBatchOps] = []
 
     def __len__(self):
         return len(self._ops_queue)
 
     def batch(self):
-        return self
+        new_batch = BatchAsyncInternal(*self._args, **self._kwargs)
+        new_batch._data = self._data
+        return new_batch
 
     async def commit(self) -> List[Any]:
         results = []
@@ -98,6 +101,7 @@ class BatchAsyncInternal(AsyncMockFirestore):
                 results.append(await op.doc_ref.delete())
             else:
                 raise NotImplementedError
+        self._ops_queue = []
         return results
 
     def set( # noqa
