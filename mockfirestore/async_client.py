@@ -101,6 +101,7 @@ class BatchAsyncInternal(AsyncMockFirestore):
                 results.append(await op.doc_ref.delete())
             else:
                 raise NotImplementedError
+        self._ops_queue = []
         return results
 
     def set( # noqa
